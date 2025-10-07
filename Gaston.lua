@@ -22,7 +22,7 @@ blur.Parent = Lighting
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
-ScreenGui.Name = "SixsixUI"
+ScreenGui.Name = "😈SixSixClan😈"
 ScreenGui.Parent = plr:WaitForChild("PlayerGui")
 
 -- 🎛️ Marco principal
