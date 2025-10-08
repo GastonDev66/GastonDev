@@ -11,6 +11,7 @@ local plr = Players.LocalPlayer
 getgenv().autoFlash = false
 local targetPlayer = nil
 local minimized = false
+local currentHighlight = nil
 
 -- 🌫️ Blur de fondo
 local blur = Instance.new("BlurEffect")
@@ -88,7 +89,7 @@ MinButton.TextSize = 18
 MinButton.Parent = Frame
 Instance.new("UICorner", MinButton).CornerRadius = UDim.new(0, 8)
 
--- ✋ Arrastre libre (PC + móvil) + anclar interfaz
+-- ✋ Arrastre libre + anclar interfaz
 do
 	local dragging = false
 	local dragStart, startPos
@@ -138,7 +139,7 @@ spawn(function()
 end)
 
 -- 🌌 Partículas decorativas
-local symbols = {"⛧", "⸸", "☠"}
+local symbols = {"🩸", "🔪", "☠️"}
 local particleFolder = Instance.new("Folder", Frame)
 particleFolder.Name = "Particles"
 
@@ -219,28 +220,94 @@ end
 addButtonGlow(ToggleButton)
 addButtonGlow(MinButton)
 
--- 🔎 Buscar jugador
+-- 🔦 Highlight y búsqueda de objetivo
+local function removeHighlight()
+	if currentHighlight then
+		currentHighlight:Destroy()
+		currentHighlight = nil
+	end
+end
+
 TextBox.FocusLost:Connect(function()
 	local name = TextBox.Text
 	if name == "" then
 		StatusLabel.Text = "⚠️ Escribí un nombre."
 		targetPlayer = nil
+		removeHighlight()
 		return
 	end
 	for _, player in ipairs(Players:GetPlayers()) do
 		if string.lower(player.Name) == string.lower(name) or string.find(string.lower(player.DisplayName), string.lower(name)) then
 			targetPlayer = player
 			StatusLabel.Text = "✅ Objetivo: " .. player.Name
+			removeHighlight()
+			if player.Character then
+				currentHighlight = Instance.new("Highlight")
+				currentHighlight.Name = "TargetHighlight"
+				currentHighlight.FillColor = Color3.fromRGB(255, 0, 0)
+				currentHighlight.FillTransparency = 0.5
+				currentHighlight.OutlineColor = Color3.fromRGB(255, 50, 50)
+				currentHighlight.OutlineTransparency = 0
+				currentHighlight.Adornee = player.Character
+				currentHighlight.Parent = player.Character
+
+				-- ✨ Parpadeo del highlight
+				spawn(function()
+					local increasing = true
+					while currentHighlight and currentHighlight.Parent do
+						if increasing then
+							currentHighlight.FillTransparency -= 0.01
+							currentHighlight.OutlineTransparency -= 0.01
+						else
+							currentHighlight.FillTransparency += 0.01
+							currentHighlight.OutlineTransparency += 0.01
+						end
+						if currentHighlight.FillTransparency <= 0.3 then
+							increasing = false
+						elseif currentHighlight.FillTransparency >= 0.5 then
+							increasing = true
+						end
+						task.wait(0.02)
+					end
+				end)
+			end
 			return
 		end
 	end
 	StatusLabel.Text = "❌ Jugador no encontrado."
 	targetPlayer = nil
+	removeHighlight()
 end)
 
 -- ⚙️ Sistema de humo super rápido
 local createFlash = ReplicatedStorage:FindFirstChild("RemoteTriggers") and ReplicatedStorage.RemoteTriggers:FindFirstChild("CreateFlash")
+local sentThisSecond = 0
 
+-- 📊 Contador de flashes por segundo
+local Counter = Instance.new("TextLabel")
+Counter.Size = UDim2.new(1, -40, 0, 20)
+Counter.Position = UDim2.new(0, 20, 1, -30)
+Counter.BackgroundTransparency = 1
+Counter.TextColor3 = Color3.fromRGB(255, 255, 255)
+Counter.Font = Enum.Font.Gotham
+Counter.TextSize = 12
+Counter.TextXAlignment = Enum.TextXAlignment.Left
+Counter.Text = "📈 Flashes/s: 0"
+Counter.Parent = Frame
+
+-- Actualización del contador
+spawn(function()
+	while Frame.Parent do
+		if getgenv().autoFlash then
+			Counter.Text = "📈 Flashes/s: " .. sentThisSecond
+		else
+			Counter.Text = "📈 Flashes/s: 0"
+		end
+		task.wait(0.5)
+	end
+end)
+
+-- Botón iniciar/detener
 ToggleButton.MouseButton1Click:Connect(function()
 	if not targetPlayer then
 		StatusLabel.Text = "⚠️ Seleccioná un jugador válido."
@@ -256,8 +323,9 @@ ToggleButton.MouseButton1Click:Connect(function()
 				warn("⚠️ Remote CreateFlash no encontrado")
 				return
 			end
-			local acc, interval, perInterval = 0, 0.002, 3
-			local maxPerSecond, sentThisSecond, lastSecond = 500, 0, tick()
+			local acc, interval, perInterval = 0, 0.001, 5
+			local maxPerSecond, lastSecond = 1000, tick()
+			sentThisSecond = 0
 			while getgenv().autoFlash do
 				local dt = RunService.Heartbeat:Wait()
 				acc += dt
@@ -286,24 +354,16 @@ end)
 -- 🔘 Minimizar
 MinButton.MouseButton1Click:Connect(function()
 	minimized = not minimized
-	local elements = {TextBox, StatusLabel, ToggleButton}
-	
+	local elements = {TextBox, StatusLabel, ToggleButton, Counter}
+
 	if minimized then
 		MinButton.Text = "+"
 		blur.Enabled = false
-		for _, obj in ipairs(elements) do 
-			obj.Visible = false 
-		end
-		
-		-- 🔧 Ahora se minimiza sin rotación (recta)
+		for _, obj in ipairs(elements) do obj.Visible = false end
 		TweenService:Create(
 			Frame,
 			TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{
-				Size = UDim2.new(0, 300, 0, 45),
-				Position = UDim2.new(0.5, -150, 0.5, 50),
-				Rotation = 0 -- ❌ Sin rotación torcida
-			}
+			{Size = UDim2.new(0, 300, 0, 45), Position = UDim2.new(0.5, -150, 0.5, 50), Rotation = 0}
 		):Play()
 	else
 		MinButton.Text = "−"
@@ -311,17 +371,10 @@ MinButton.MouseButton1Click:Connect(function()
 		TweenService:Create(
 			Frame,
 			TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{
-				Size = UDim2.new(0, 300, 0, 250),
-				Position = UDim2.new(0.5, -150, 0.5, -125),
-				Rotation = 0
-			}
+			{Size = UDim2.new(0, 300, 0, 250), Position = UDim2.new(0.5, -150, 0.5, -125), Rotation = 0}
 		):Play()
-
 		task.delay(0.3, function()
-			for _, obj in ipairs(elements) do 
-				obj.Visible = true 
-			end
+			for _, obj in ipairs(elements) do obj.Visible = true end
 		end)
 	end
 end)
