@@ -102,7 +102,7 @@ task.spawn(function()
 end)
 
 -- 🩸 Partículas decorativas tipo símbolos
-local symbols = {"🩸","👹","☠️"}
+local symbols = {"🩸","",""}
 local particleFolder = Instance.new("Folder", Frame)
 particleFolder.Name = "Particles"
 task.spawn(function()
