@@ -299,7 +299,7 @@ LimitLabel.BackgroundTransparency = 1
 LimitLabel.TextColor3 = Color3.fromRGB(255, 200, 200)
 LimitLabel.Font = Enum.Font.Gotham
 LimitLabel.TextSize = 12
-LimitLabel.Text = "🚀 Límite flashes/s: " .. maxPerSecond
+LimitLabel.Text = "🚀 Humos por segundo: " .. maxPerSecond
 LimitLabel.Parent = Frame
 
 -- Slider con barra dinámica verde → amarillo → rojo
@@ -330,7 +330,7 @@ local function updateSlider(input)
     local relX = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
     SliderFill.Size = UDim2.new(relX, 0, 1, 0)
     maxPerSecond = math.floor(100 + relX * 49900)
-    LimitLabel.Text = "🚀 Límite flashes/s: " .. maxPerSecond
+    LimitLabel.Text = "🚀 Humos por segundo: " .. maxPerSecond
 
     -- Color dinámico (verde → amarillo → rojo)
     local color
@@ -436,3 +436,12 @@ end)
 Frame.BackgroundTransparency = 1
 Frame.Position = UDim2.new(0.5,-150,0.5,-100)
 TweenService:Create(Frame,TweenInfo.new(0.5,Enum.EasingStyle.Quad),{BackgroundTransparency=0.1,Position=UDim2.new(0.5,-150,0.5,-135)}):Play()
+
+-- 🔔 Notificación al ejecutar el script
+local StarterGui = game:GetService("StarterGui")
+StarterGui:SetCore("SendNotification", {
+    Title = "SixSixClan";
+    Text = "Lageador de downs activado!";
+    Icon = "";
+    Duration = 5; -- segundos
+})
