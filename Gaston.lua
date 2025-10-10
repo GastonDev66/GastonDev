@@ -134,17 +134,108 @@ UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 local UICorner = Instance.new("UICorner", Frame)
 UICorner.CornerRadius = UDim.new(0,12)
 
--- 🏷️ Título
+-- 🖼️ Ícono del clan (alineado al lado del título)
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "ClanIcon"
+Icon.Image = "rbxassetid://131574561771512" -- 🧩 reemplazá con el ID de tu logo
+Icon.Size = UDim2.new(0, 28, 0, 28)
+Icon.Position = UDim2.new(0, 10, 0, 7) -- 🔧 bajamos un poco y lo dejamos a la izquierda
+Icon.BackgroundTransparency = 1
+Icon.ZIndex = 3
+Icon.Parent = Frame
+
+-- ✨ Gradiente animado igual al del fondo
+local IconGradient = Instance.new("UIGradient")
+IconGradient.Rotation = 0
+IconGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 30, 30)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 0, 80)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 200))
+}
+IconGradient.Parent = Icon
+
+-- 🌀 Animación sincronizada con el efecto del Frame
+task.spawn(function()
+	local colorSets = {
+		{Color3.fromRGB(255,30,30), Color3.fromRGB(80,0,80), Color3.fromRGB(0,0,200)},
+		{Color3.fromRGB(0,0,200), Color3.fromRGB(0,200,255), Color3.fromRGB(80,0,80)},
+		{Color3.fromRGB(200,0,0), Color3.fromRGB(255,100,0), Color3.fromRGB(255,0,150)}
+	}
+	local currentSet = 1
+	while Icon and Icon.Parent do
+		for i = 0, 360, 1 do
+			IconGradient.Rotation = i
+			task.wait(0.02)
+		end
+		currentSet = (currentSet % #colorSets) + 1
+		local set = colorSets[currentSet]
+		TweenService:Create(IconGradient, TweenInfo.new(3, Enum.EasingStyle.Quad), {
+			Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0,set[1]),
+				ColorSequenceKeypoint.new(0.5,set[2]),
+				ColorSequenceKeypoint.new(1,set[3])
+			}
+		}):Play()
+	end
+end)
+
+-- 🏷️ Título siniestro
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1,-70,0,40)
-Title.Position = UDim2.new(0,10,0,0)
+Title.Size = UDim2.new(1,-60,0,40)
+Title.Position = UDim2.new(0,45,0,0)
 Title.BackgroundTransparency = 1
-Title.Text = "⸸SixSixClan⸸"
-Title.TextColor3 = Color3.fromRGB(255,50,50)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 17
+Title.Text = "⸸ SixSixClan ⸸"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.Fantasy  -- 👹 Fuente gótica/siniestra
+Title.TextSize = 22
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 3
 Title.Parent = Frame
+
+-- 🌈 Gradiente animado (negro → rojo → blanco)
+local TitleGradient = Instance.new("UIGradient")
+TitleGradient.Rotation = 0
+TitleGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 0, 0)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+}
+TitleGradient.Parent = Title
+
+-- 💀 Brillo exterior tipo neón rojo
+local Glow = Instance.new("TextLabel")
+Glow.Size = Title.Size
+Glow.Position = Title.Position
+Glow.BackgroundTransparency = 1
+Glow.Text = Title.Text
+Glow.Font = Title.Font
+Glow.TextSize = Title.TextSize
+Glow.TextXAlignment = Title.TextXAlignment
+Glow.TextColor3 = Color3.fromRGB(150, 0, 0)
+Glow.ZIndex = 2
+Glow.Parent = Frame
+
+-- 🔥 Animación de brillo + gradiente rotativo
+task.spawn(function()
+	local increasing = true
+	while Title and Title.Parent do
+		-- Rotación del gradiente para efecto oscuro animado
+		for i = 0, 360, 3 do
+			if not Title or not TitleGradient then break end
+			TitleGradient.Rotation = i
+			task.wait(0.02)
+		end
+
+		-- Efecto de pulso neón (rojo intenso)
+		local goalColor = increasing and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(80, 0, 0)
+		TweenService:Create(Glow, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
+			TextColor3 = goalColor
+		}):Play()
+
+		increasing = not increasing
+		task.wait(0.7)
+	end
+end)
 
 -- 🔒 Botón anclar
 local AnchorButton = Instance.new("TextButton")
@@ -169,34 +260,44 @@ MinButton.TextSize = 18
 MinButton.Parent = Frame
 Instance.new("UICorner", MinButton).CornerRadius = UDim.new(0,8)
 
--- ✋ Arrastre libre + anclar
+-- ✋ Arrastre libre + anclar (sin límites)
 do
     local dragging = false
     local dragStart, startPos
     local anchored = false
+
     local function update(input)
-        if anchored then return end
+        if anchored or not dragging then return end
         local delta = input.Position - dragStart
-        local newX = math.clamp(startPos.X.Offset + delta.X, -Frame.AbsoluteSize.X + 50, workspace.CurrentCamera.ViewportSize.X - 50)
-        local newY = math.clamp(startPos.Y.Offset + delta.Y, -Frame.AbsoluteSize.Y + 50, workspace.CurrentCamera.ViewportSize.Y - 50)
-        Frame.Position = UDim2.new(startPos.X.Scale, newX, startPos.Y.Scale, newY)
+        Frame.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
     end
+
     Frame.InputBegan:Connect(function(input)
         if anchored then return end
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = Frame.Position
+
+            -- Detectar cuando se suelta el clic
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
             end)
         end
     end)
+
     UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             update(input)
         end
     end)
+
+    -- Botón de anclaje (bloquear movimiento)
     AnchorButton.MouseButton1Click:Connect(function()
         anchored = not anchored
         AnchorButton.Text = anchored and "🔒" or "🔓"
@@ -211,7 +312,7 @@ TextBox.BackgroundColor3 = Color3.fromRGB(60,0,0)
 TextBox.TextColor3 = Color3.fromRGB(255,200,200)
 TextBox.PlaceholderText = ""
 TextBox.PlaceholderColor3 = Color3.fromRGB(255,120,120)
-TextBox.Font = Enum.Font.GothamSemibold
+TextBox.Font = Enum.Font.Fantasy
 TextBox.TextSize = 14
 TextBox.ClearTextOnFocus = true
 TextBox.Parent = Frame
@@ -224,7 +325,7 @@ StatusLabel.Position = UDim2.new(0,20,0,110)
 StatusLabel.BackgroundTransparency = 1
 StatusLabel.Text = "Esperando selección..."
 StatusLabel.TextColor3 = Color3.fromRGB(255,120,120)
-StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.Font = Enum.Font.Fantasy
 StatusLabel.TextSize = 14
 StatusLabel.Parent = Frame
 
@@ -235,7 +336,7 @@ ToggleButton.Position = UDim2.new(0,30,0,150)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(180,0,0)
 ToggleButton.Text = "▶ Iniciar / Detener"
 ToggleButton.TextColor3 = Color3.fromRGB(255,200,200)
-ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.Font = Enum.Font.Fantasy
 ToggleButton.TextSize = 16
 ToggleButton.Parent = Frame
 Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0,10)
@@ -318,7 +419,7 @@ LimitLabel.Size = UDim2.new(1,-40,0,20)
 LimitLabel.Position = UDim2.new(0,20,0,200)
 LimitLabel.BackgroundTransparency = 1
 LimitLabel.TextColor3 = Color3.fromRGB(255,200,200)
-LimitLabel.Font = Enum.Font.Gotham
+LimitLabel.Font = Enum.Font.Fantasy
 LimitLabel.TextSize = 12
 LimitLabel.Text = "🚀 Humos por segundo: " .. maxPerSecond
 LimitLabel.Parent = Frame
