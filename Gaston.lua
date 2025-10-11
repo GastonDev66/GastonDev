@@ -558,10 +558,10 @@ Frame.BackgroundTransparency = 1
 Frame.Position = UDim2.new(0.5,-150,0.5,-100)
 TweenService:Create(Frame,TweenInfo.new(0.5,Enum.EasingStyle.Quad),{BackgroundTransparency=0.1,Position=UDim2.new(0.5,-150,0.5,-135)}):Play()
 
--- 🔔 Notificación al ejecutar el script
+-- 🔔 Notificación al ejecutar el script (ya estaba al final, pero lo repito para cerrar bien)
 StarterGui:SetCore("SendNotification", {
     Title = "SixSixClan";
-    Text = "Lageador de downs activado!";
-    Icon = "";
+    Text = "Kickeador activado!";
+    Icon = "rbxassetid://117520043554283"; -- Usa el ID de tu logo
     Duration = 5;
 })
