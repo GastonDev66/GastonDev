@@ -32,6 +32,43 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.Name = "😈SixSixClan😈"
 ScreenGui.Parent = PlayerGui
 
+-- 🌑 Fondo infernal oscuro dentro del Frame
+local BGImage = Instance.new("ImageLabel")
+BGImage.Size = UDim2.new(1,0,1,0)
+BGImage.Position = UDim2.new(0,0,0,0)
+BGImage.BackgroundTransparency = 1
+BGImage.Image = "rbxassetid://83339138877786" -- 🔥 textura infernal
+BGImage.ImageTransparency = 0.7
+BGImage.ZIndex = 0
+BGImage.ClipsDescendants = true
+BGImage.Parent = Frame
+
+-- Humo negro flotante dentro del Frame
+local smokeFolder = Instance.new("Folder")
+smokeFolder.Name = "Smoke"
+smokeFolder.Parent = Frame
+
+task.spawn(function()
+    while Frame and Frame.Parent do
+        local smoke = Instance.new("Frame")
+        smoke.Size = UDim2.new(0, math.random(60,120), 0, math.random(30,60))
+        smoke.Position = UDim2.new(math.random(),0,1,0)
+        smoke.BackgroundColor3 = Color3.fromRGB(0,0,0)
+        smoke.BackgroundTransparency = 0.7
+        smoke.BorderSizePixel = 0
+        smoke.ZIndex = 0
+        smoke.Parent = smokeFolder
+        TweenService:Create(smoke, TweenInfo.new(math.random(8,15), Enum.EasingStyle.Linear), {
+            Position = UDim2.new(smoke.Position.X.Scale,0,-0.2,0),
+            BackgroundTransparency = 1
+        }):Play()
+        task.delay(math.random(2,5), function()
+            pcall(function() smoke:Destroy() end)
+        end)
+        task.wait(0.2)
+    end
+end)
+
 -- 🎛️ Marco principal (ANIMADO)
 local Frame = Instance.new("Frame")
 Frame.Size = UDim2.new(0, 300, 0, 270)
@@ -40,16 +77,18 @@ Frame.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
 Frame.BorderSizePixel = 0
 Frame.Active = true
 Frame.ClipsDescendants = true
+Frame.ZIndex = 1
 Frame.Parent = ScreenGui
 
--- 🌈 Gradiente animado
-local AnimatedGradient = Instance.new("UIGradient", BGImage)
+-- 🌈 Gradiente animado sobre el Frame
+local AnimatedGradient = Instance.new("UIGradient")
 AnimatedGradient.Rotation = 0
 AnimatedGradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 30, 30)),
     ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 0, 80)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 200))
 }
+AnimatedGradient.Parent = Frame
 
 task.spawn(function()
     local colorSets = {
