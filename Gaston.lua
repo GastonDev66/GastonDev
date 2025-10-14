@@ -829,11 +829,11 @@ local function setCustomSkybox(enabled)
     -- Y un ID de una textura de estrellas rojas para el 'SkyboxUp' si lo deseas.
     -- Si solo quieres un cielo negro completo, usa el mismo ID negro para todos.
     local skyboxUpID    = "rbxassetid://77916824609158"     -- Arriba (donde irían las estrellas rojas)
-    local skyboxDownID  = "rbxassetid://77916824609158"      -- Abajo
-    local skyboxFrontID = "rbxassetid://77916824609158"     -- Frente
-    local skyboxBackID  = "rbxassetid://77916824609158"      -- Atrás
-    local skyboxLeftID  = "rbxassetid://77916824609158"  -- Izquierda
-    local skyboxRightID = "rbxassetid://77916824609158"    -- Derecha
+    local skyboxDownID  = "rbxassetid://97839464618263"      -- Abajo
+    local skyboxFrontID = "rbxassetid://119754691238397"     -- Frente
+    local skyboxBackID  = "rbxassetid://97839464618263"      -- Atrás
+    local skyboxLeftID  = "rbxassetid://97839464618263"  -- Izquierda
+    local skyboxRightID = "rbxassetid://97839464618263"    -- Derecha
     -- ==================================
     
     if enabled then
