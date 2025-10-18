@@ -18,8 +18,8 @@ local targetPlayer = nil
 local minimized = false
 local currentHighlight = nil -- Solo para el objetivo del AutoFlash
 local highlightConn = nil
-local maxPerSecond = 1000
-local sentThisSecond = 0
+local maxPerSecond = 1000 -- Esta variable ya no se usará para el bucle constante, pero se mantiene para la GUI
+local sentThisSecond = 0 -- Esta variable ya no se usará para el bucle constante
 
 -- 🚩 Variables de la Pestaña Extra
 local afkEnabled = false
@@ -30,6 +30,7 @@ local espEnabled = false -- Nueva variable para ESP
 local espConnections = {} -- Para manejar las conexiones del ESP
 local espHighlights = {} -- Para guardar los Highlights del ESP
 local espUpdateConn = nil -- Conexión para el loop de actualización del ESP
+local infiniteYieldLoaded = false -- ⬅️ NUEVA VARIABLE PARA INFINITE YIELD
 
 -- 🌫️ Blur de fondo
 local blur = Instance.new("BlurEffect")
@@ -466,7 +467,7 @@ end)
 local remoteTriggers = ReplicatedStorage:FindFirstChild("RemoteTriggers")
 local createFlash = remoteTriggers and remoteTriggers:FindFirstChild("CreateFlash")
 
--- 🧮 Control límite dinámico
+-- 🧮 Control límite dinámico (SE MANTIENE, PERO NO SE USA EN EL BUCLE DE ATAQUE)
 local LimitLabel = Instance.new("TextLabel")
 LimitLabel.Size = UDim2.new(1,-40,0,20)
 LimitLabel.Position = UDim2.new(0,20,0,200)
@@ -477,7 +478,7 @@ LimitLabel.TextSize = 12
 LimitLabel.Text = "🚀 Humos por segundo: " .. maxPerSecond
 LimitLabel.Parent = Frame
 
--- Slider dinámico
+-- Slider dinámico (SE MANTIENE, PERO NO SE USA EN EL BUCLE DE ATAQUE)
 local SliderBack = Instance.new("Frame")
 SliderBack.Size = UDim2.new(1,-40,0,12)
 SliderBack.Position = UDim2.new(0,20,0,225)
@@ -536,7 +537,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Toggle autoFlash
+-- Toggle autoFlash (MODIFICADO PARA ATAQUE CONSTANTE)
 ToggleButton.MouseButton1Click:Connect(function()
     if not targetPlayer then
         StatusLabel.Text = "⚠️ Seleccioná un jugador válido."
@@ -554,33 +555,27 @@ ToggleButton.MouseButton1Click:Connect(function()
                 getgenv().autoFlash = false
                 return
             end
-            local acc, interval, perInterval = 0, 0.0005, 50
-            local lastSecond = tick()
-            sentThisSecond = 0
+            
+            -- 🔥 Bucle de envío de humos constante (lo más rápido posible)
             while getgenv().autoFlash do
-                local dt = RunService.Heartbeat:Wait()
-                acc = acc + dt
-                if tick() - lastSecond >= 1 then
-                    sentThisSecond = 0
-                    lastSecond = tick()
-                end
-                while acc >= interval and sentThisSecond < maxPerSecond and getgenv().autoFlash do
-                    acc = acc - interval
-                    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        local pos = targetPlayer.Character.HumanoidRootPart.Position
-                        for i = 1, perInterval do
-                            pcall(function()
-                                createFlash:FireServer(pos,21)
-                            end)
-                            sentThisSecond = sentThisSecond + 1
-                            if sentThisSecond >= maxPerSecond then break end
-                        end
-                    else
-                        task.wait(0.05)
-                        break
+                if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local pos = targetPlayer.Character.HumanoidRootPart.Position
+                    
+                    -- Envía múltiples eventos en cada frame o ciclo de espera mínima
+                    for i = 1, 50 do
+                        pcall(function()
+                            createFlash:FireServer(pos,21)
+                        end)
                     end
+                else
+                    task.wait(0.05)
                 end
+                
+                -- Usa task.wait() para ceder el control y no congelar el juego
+                task.wait() 
             end
+            -- 🔥 FIN DEL BUCLE CONSTANTE
+            
         end)
     else
         StatusLabel.Text = "✅ Detenido (último: "..(targetPlayer and targetPlayer.Name or "N/A")..")"
@@ -974,8 +969,29 @@ end
 
 local espToggle = createToggle("ESP (Resaltar Enemigos)", espEnabled, toggleESP)
 
+-- 7. Cargar Infinite Yield (NUEVO BOTÓN)
+local function loadInfiniteYield(enabled)
+    if enabled and not infiniteYieldLoaded then
+        infiniteYieldLoaded = true
+        task.spawn(function()
+            pcall(function()
+                loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+            end)
+        end)
+        StarterGui:SetCore("SendNotification", {
+            Title = "SixSixClan";
+            Text = "Infinite Yield cargado! (Verifica la consola para comandos)";
+            Icon = "rbxassetid://131574561771512";
+            Duration = 3;
+        })
+    end
+end
+
+local iyToggle = createToggle("Cargar Infinite Yield (F8)", infiniteYieldLoaded, loadInfiniteYield)
+
 -- Ajustar el tamaño del Canvas después de agregar los elementos
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, UILayout.AbsoluteContentSize.Y + 10)
+-- Se aumenta el tamaño para acomodar el nuevo botón
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, UILayout.AbsoluteContentSize.Y + 50) 
 
 ---
 -- 🛠️ DEFINICIÓN DE BOTONES DE NAVEGACIÓN Y LÓGICA FINAL
