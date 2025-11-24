@@ -1126,3 +1126,4 @@ StarterGui:SetCore("SendNotification", {
     Icon = "rbxassetid://117520043554283"; -- Usa el ID de tu logo
     Duration = 5;
 })
+
