@@ -416,7 +416,8 @@ TextBox.FocusLost:Connect(function(enterPressed)
         return
     end
     for _, player in ipairs(Players:GetPlayers()) do
-        if string.lower(player.Name) == string.lower(name) or (player.DisplayName and string.find(string.lower(player.DisplayName), string.lower(name))) then
+    if string.lower(player.Name) == string.lower(name) 
+    or string.find(string.lower(player.Name), string.lower(name)) then
             targetPlayer = player
             StatusLabel.Text = "✅ Objetivo AutoFlash: " .. player.Name
             removeHighlight()
@@ -467,7 +468,7 @@ end)
 local remoteTriggers = ReplicatedStorage:FindFirstChild("RemoteTriggers")
 local createFlash = remoteTriggers and remoteTriggers:FindFirstChild("CreateFlash")
 
--- 🧮 Control límite dinámico (SE MANTIENE, PERO NO SE USA EN EL BUCLE DE ATAQUE)
+-- 🧮 Control límite dinámico (FUNCIONA + AHORA SE USA EN EL BUCLE)
 local LimitLabel = Instance.new("TextLabel")
 LimitLabel.Size = UDim2.new(1,-40,0,20)
 LimitLabel.Position = UDim2.new(0,20,0,200)
@@ -478,7 +479,7 @@ LimitLabel.TextSize = 12
 LimitLabel.Text = "🚀 Humos por segundo: " .. maxPerSecond
 LimitLabel.Parent = Frame
 
--- Slider dinámico (SE MANTIENE, PERO NO SE USA EN EL BUCLE DE ATAQUE)
+-- Slider dinámico
 local SliderBack = Instance.new("Frame")
 SliderBack.Size = UDim2.new(1,-40,0,12)
 SliderBack.Position = UDim2.new(0,20,0,225)
@@ -501,21 +502,13 @@ gradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,0))
 })
 
--- Función slider
+-- Función slider (ACTUALIZA EL LÍMITE)
 local sliderDragging = false
 local function updateSlider(input)
     local relX = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X,0,1)
     SliderFill.Size = UDim2.new(relX,0,1,0)
     maxPerSecond = math.floor(100 + relX*49900)
     LimitLabel.Text = "🚀 Humos por segundo: "..maxPerSecond
-
-    local color
-    if relX < 0.5 then
-        color = Color3.fromRGB(0,255,0):Lerp(Color3.fromRGB(255,255,0), relX*2)
-    else
-        color = Color3.fromRGB(255,255,0):Lerp(Color3.fromRGB(255,0,0), (relX-0.5)*2)
-    end
-    SliderFill.BackgroundColor3 = color
 end
 
 SliderBack.InputBegan:Connect(function(input)
@@ -531,23 +524,27 @@ SliderBack.InputBegan:Connect(function(input)
         end)
     end
 end)
+
 UserInputService.InputChanged:Connect(function(input)
     if sliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         updateSlider(input)
     end
 end)
 
--- Toggle autoFlash (MODIFICADO PARA ATAQUE CONSTANTE)
+-- 🔥 NUEVO SISTEMA DE AUTOFLASH: PRECISO, ESTABLE Y VELOZ
 ToggleButton.MouseButton1Click:Connect(function()
     if not targetPlayer then
         StatusLabel.Text = "⚠️ Seleccioná un jugador válido."
         return
     end
+
     getgenv().autoFlash = not getgenv().autoFlash
     ToggleButton.BackgroundColor3 = getgenv().autoFlash and Color3.fromRGB(255,50,50) or Color3.fromRGB(180,0,0)
     ToggleButton.Text = getgenv().autoFlash and "⛔ Detener AutoFlash" or "▶ Iniciar AutoFlash"
+
     if getgenv().autoFlash then
         StatusLabel.Text = "💥 Atacando a "..targetPlayer.Name
+
         task.spawn(function()
             if not createFlash then
                 warn("⚠️ Remote CreateFlash no encontrado")
@@ -555,27 +552,35 @@ ToggleButton.MouseButton1Click:Connect(function()
                 getgenv().autoFlash = false
                 return
             end
-            
-            -- 🔥 Bucle de envío de humos constante (lo más rápido posible)
+
+            -- Sistema preciso de control
+            local accumulated = 0
+            local lastTime = tick()
+
             while getgenv().autoFlash do
-                if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local pos = targetPlayer.Character.HumanoidRootPart.Position
-                    
-                    -- Envía múltiples eventos en cada frame o ciclo de espera mínima
-                    for i = 1, 50 do
-                        pcall(function()
-                            createFlash:FireServer(pos,21)
-                        end)
+                local now = tick()
+                local dt = now - lastTime
+                lastTime = now
+
+                accumulated += dt * maxPerSecond  -- cuántos flashes se deben enviar
+
+                if accumulated >= 1 then
+                    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local pos = targetPlayer.Character.HumanoidRootPart.Position
+                        local toSend = math.floor(accumulated)
+                        accumulated -= toSend
+
+                        -- Enviar EXACTAMENTE la cantidad calculada
+                        for i = 1, toSend do
+                            pcall(function()
+                                createFlash:FireServer(pos, 21)
+                            end)
+                        end
                     end
-                else
-                    task.wait(0.05)
                 end
-                
-                -- Usa task.wait() para ceder el control y no congelar el juego
-                task.wait() 
+
+                task.wait()
             end
-            -- 🔥 FIN DEL BUCLE CONSTANTE
-            
         end)
     else
         StatusLabel.Text = "✅ Detenido (último: "..(targetPlayer and targetPlayer.Name or "N/A")..")"
