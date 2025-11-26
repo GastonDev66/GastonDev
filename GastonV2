@@ -757,19 +757,6 @@ local function createSlider(name, minVal, maxVal, initialVal, updateFunc)
     end)
 end
 
--- 1. Anti-AFK
-local antiAFKButton = createToggle("Anti-AFK (Bypass Inactividad)", afkEnabled, function(enabled)
-    afkEnabled = enabled
-    if afkEnabled then
-        task.spawn(function()
-            while afkEnabled and plr do
-                plr.Idled:Fire()
-                task.wait(10)
-            end
-        end)
-    end
-end)
-
 -- 2. Toggle Blur
 local blurToggle = createToggle("Toggle Blur (UI)", blur.Enabled, function(enabled)
     blur.Enabled = enabled
@@ -898,81 +885,6 @@ local skyboxToggle = createToggle("Atmósfera Infernal (Skybox Custom)", customS
     setCustomSkybox(enabled)
 end)
 
--- 6. ESP Básico (Solo Trazador) - Highlight para enemigos
-local function clearESPHighlights()
-    for _, highlight in pairs(espHighlights) do
-        pcall(function() highlight:Destroy() end)
-    end
-    espHighlights = {}
-    for _, conn in pairs(espConnections) do
-        pcall(function() conn:Disconnect() end)
-    end
-    if espUpdateConn then
-        espUpdateConn:Disconnect()
-        espUpdateConn = nil
-    end
-end
-
-local function setupESPHighlight(player)
-    if player == plr then return end 
-    if not player.Character then return end
-
-    local char = player.Character
-    local highlight = Instance.new("Highlight")
-    highlight.Name = "ESPHighlight_" .. player.Name
-    highlight.FillColor = Color3.fromRGB(255, 0, 0) 
-    highlight.FillTransparency = 0.7
-    highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-    highlight.OutlineTransparency = 0.2
-    highlight.Adornee = char
-    highlight.Parent = char
-    espHighlights[player.UserId] = highlight
-
-    local charAddedConn = player.CharacterAdded:Connect(function(newChar)
-        if espEnabled and espHighlights[player.UserId] then
-            newChar:WaitForChild("HumanoidRootPart", 10) 
-            if newChar:FindFirstChild("HumanoidRootPart") then
-                espHighlights[player.UserId].Adornee = newChar
-                espHighlights[player.UserId].Parent = newChar
-            end
-        end
-    end)
-    espConnections[player.UserId .. "_charAdded"] = charAddedConn
-
-    local playerRemovingConn = Players.PlayerRemoving:Connect(function(removedPlayer)
-        if removedPlayer.UserId == player.UserId then
-            if espHighlights[removedPlayer.UserId] then
-                pcall(function() espHighlights[removedPlayer.UserId]:Destroy() end)
-                espHighlights[removedPlayer.UserId] = nil
-            end
-            if espConnections[removedPlayer.UserId .. "_charAdded"] then
-                pcall(function() espConnections[removedPlayer.UserId .. "_charAdded"]:Disconnect() end)
-                espConnections[removedPlayer.UserId .. "_charAdded"] = nil
-            end
-        end
-    end)
-    espConnections[player.UserId .. "_playerRemoving"] = playerRemovingConn
-end
-
-local function toggleESP(enabled)
-    espEnabled = enabled
-    if espEnabled then
-        for _, player in ipairs(Players:GetPlayers()) do
-            setupESPHighlight(player)
-        end
-        espConnections["PlayerAdded"] = Players.PlayerAdded:Connect(function(player)
-            setupESPHighlight(player)
-        end)
-    else
-        clearESPHighlights()
-        if espConnections["PlayerAdded"] then
-            espConnections["PlayerAdded"]:Disconnect()
-            espConnections["PlayerAdded"] = nil
-        end
-    end
-end
-
-local espToggle = createToggle("ESP (Resaltar Enemigos)", espEnabled, toggleESP)
 
 -- 7. Cargar Infinite Yield (NUEVO BOTÓN)
 local function loadInfiniteYield(enabled)
@@ -1131,4 +1043,3 @@ StarterGui:SetCore("SendNotification", {
     Icon = "rbxassetid://117520043554283"; -- Usa el ID de tu logo
     Duration = 5;
 })
-
