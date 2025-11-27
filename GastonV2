@@ -67,31 +67,6 @@ BGImage.ZIndex = 0
 BGImage.ClipsDescendants = true
 BGImage.Parent = Frame
 
--- Humo negro flotante dentro del Frame
-local smokeFolder = Instance.new("Folder")
-smokeFolder.Name = "Smoke"
-smokeFolder.Parent = Frame
-task.spawn(function()
-    while Frame and Frame.Parent do
-        local smoke = Instance.new("Frame")
-        smoke.Size = UDim2.new(0, math.random(60,120), 0, math.random(30,60))
-        smoke.Position = UDim2.new(math.random(),0,1,0)
-        smoke.BackgroundColor3 = Color3.fromRGB(0,0,0)
-        smoke.BackgroundTransparency = 0.7
-        smoke.BorderSizePixel = 0
-        smoke.ZIndex = 0
-        smoke.Parent = smokeFolder
-        TweenService:Create(smoke, TweenInfo.new(math.random(8,15), Enum.EasingStyle.Linear), {
-            Position = UDim2.new(smoke.Position.X.Scale,0,-0.2,0),
-            BackgroundTransparency = 1
-        }):Play()
-        task.delay(math.random(2,5), function()
-            pcall(function() smoke:Destroy() end)
-        end)
-        task.wait(0.2)
-    end
-end)
-
 -- 🌈 Gradiente animado sobre el Frame
 local AnimatedGradient = Instance.new("UIGradient")
 AnimatedGradient.Rotation = 0
@@ -173,12 +148,53 @@ task.spawn(function()
     end
 end)
 
--- 🔲 Borde y esquinas
-local UIStroke = Instance.new("UIStroke", Frame)
-UIStroke.Thickness = 2
-UIStroke.Color = Color3.fromRGB(255,50,50)
-UIStroke.Transparency = 0.2
-UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+-- 🔲 Borde Neón y Esquinas Mejoradas
+-- Eliminamos el UIStroke original para reemplazarlo por el neón
+
+-- 1. Un UIStroke más grueso y visible para el "núcleo" del neón
+local NeonStrokeMain = Instance.new("UIStroke")
+NeonStrokeMain.Thickness = 3 -- Un poco más grueso para que destaque
+NeonStrokeMain.Color = Color3.fromRGB(255, 100, 100) -- Color base más brillante
+NeonStrokeMain.Transparency = 0 -- Completamente opaco para el núcleo
+NeonStrokeMain.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+NeonStrokeMain.LineJoinMode = Enum.LineJoinMode.Round -- Bordes más suaves
+NeonStrokeMain.Parent = Frame
+
+-- 2. Gradiente Animado para el Color del Neón Principal
+local NeonGradient = Instance.new("UIGradient")
+NeonGradient.Rotation = 0
+-- Colores que pasan de rojo brillante a un púrpura o azul eléctrico y de vuelta
+NeonGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),     -- Rojo intenso
+    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(255, 100, 0)), -- Naranja brillante
+    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 0, 255)), -- Magenta neón
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))      -- De vuelta al rojo
+}
+NeonGradient.Parent = NeonStrokeMain
+
+-- 3. Animación de Rotación del Gradiente para el Efecto Neón Fluyente
+task.spawn(function()
+    while NeonGradient and NeonGradient.Parent do
+        for i = 0, 360, 5 do -- Gira el gradiente para un efecto de barrido continuo
+            if not NeonGradient then break end
+            NeonGradient.Rotation = i
+            task.wait(0.05) -- Ajusta para más o menos velocidad
+        end
+    end
+end)
+
+-- 4. (Opcional) Un segundo UIStroke más suave para el "halo" o "brillo" exterior
+-- Este añade un efecto de desenfoque y transparencia para simular el resplandor neón
+local NeonStrokeGlow = Instance.new("UIStroke")
+NeonStrokeGlow.Thickness = 6 -- Más grueso que el principal
+NeonStrokeGlow.Color = Color3.fromRGB(255, 50, 50) -- Un rojo más oscuro y difuso
+NeonStrokeGlow.Transparency = 0.5 -- Semi-transparente
+NeonStrokeGlow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+NeonStrokeGlow.LineJoinMode = Enum.LineJoinMode.Round
+NeonStrokeGlow.Parent = Frame
+-- Asegúrate de que este 'glow' stroke esté por debajo del 'main' stroke en ZIndex si es necesario,
+-- o simplemente confía en que Roblox los renderizará uno sobre otro.
+
 
 
 -- 🖼️ Ícono del clan (alineado al lado del título)
@@ -412,7 +428,7 @@ end
 TextBox.FocusLost:Connect(function(enterPressed)
     local name = TextBox.Text
     if name == "" then
-        StatusLabel.Text = "⚠️ Escribí un nombre. (AutoFlash)"
+        StatusLabel.Text = "⚠️ Escribí un nombre. "
         targetPlayer = nil
         removeHighlight()
         return
@@ -1097,7 +1113,7 @@ TweenService:Create(Frame,TweenInfo.new(0.5,Enum.EasingStyle.Quad),{BackgroundTr
 -- 🔔 Notificación al ejecutar el script 
 StarterGui:SetCore("SendNotification", {
     Title = "SixSixClan";
-    Text = "Kickeador activado!";
+    Text = "😈 SixSixClan - KICKER/EXPLOIT CLIENT";
     Icon = "rbxassetid://117520043554283"; -- Usa el ID de tu logo
     Duration = 5;
 })
