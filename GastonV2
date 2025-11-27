@@ -180,8 +180,6 @@ UIStroke.Color = Color3.fromRGB(255,50,50)
 UIStroke.Transparency = 0.2
 UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-local UICorner = Instance.new("UICorner", Frame)
-UICorner.CornerRadius = UDim.new(0,12)
 
 -- 🖼️ Ícono del clan (alineado al lado del título)
 local Icon = Instance.new("ImageLabel")
@@ -192,6 +190,10 @@ Icon.Position = UDim2.new(0, 10, 0, 7)
 Icon.BackgroundTransparency = 1
 Icon.ZIndex = 3
 Icon.Parent = Frame
+
+local IconCorner = Instance.new("UICorner")
+IconCorner.CornerRadius = UDim.new(1, 0) -- 100% redondeado (círculo)
+IconCorner.Parent = Icon
 
 -- ✨ Gradiente animado igual al del fondo
 local IconGradient = Instance.new("UIGradient")
@@ -476,7 +478,7 @@ LimitLabel.BackgroundTransparency = 1
 LimitLabel.TextColor3 = Color3.fromRGB(255,200,200)
 LimitLabel.Font = Enum.Font.Fantasy
 LimitLabel.TextSize = 12
-LimitLabel.Text = "🚀 Humos por segundo: " .. maxPerSecond
+LimitLabel.Text = "⚠️ Humos por segundo: " .. maxPerSecond
 LimitLabel.Parent = Frame
 
 -- Slider dinámico
@@ -488,8 +490,9 @@ SliderBack.BorderSizePixel = 0
 SliderBack.Parent = Frame
 Instance.new("UICorner", SliderBack).CornerRadius = UDim.new(0,6)
 
-local SliderFill = Instance.new("Frame")
 local relInitial = (maxPerSecond - 100) / 49900
+
+local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new(math.clamp(relInitial,0,1),0,1,0)
 SliderFill.Parent = SliderBack
 Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0,6)
@@ -502,13 +505,68 @@ gradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,0))
 })
 
+-- 🔘 HANDLE DEL SLIDER
+local Handle = Instance.new("Frame")
+Handle.Size = UDim2.new(0, 18, 0, 18)
+Handle.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+Handle.BorderSizePixel = 0
+Handle.ZIndex = 5
+Handle.Parent = SliderBack
+Instance.new("UICorner", Handle).CornerRadius = UDim.new(1, 0)
+
+-- Posición inicial según valor
+Handle.Position = UDim2.new(relInitial, -9, 0.5, -9)
+
+-- 🔥 ICONO PERSONALIZADO DEL HANDLE (redondo + más grande)
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "HandleIcon"
+Icon.Size = UDim2.new(0, 24, 0, 24)      -- tamaño más grande (24x24)
+Icon.Position = UDim2.new(0.5, -12, 0.5, -12) -- centrado perfecto
+Icon.BackgroundTransparency = 1
+Icon.BorderSizePixel = 0
+Icon.ZIndex = Handle.ZIndex + 1
+Icon.ScaleType = Enum.ScaleType.Fit
+Icon.Parent = Handle
+
+-- Hacerlo redondo
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(1, 0)    -- círculo perfecto
+Corner.Parent = Icon
+
+-- <<< CAMBIÁ ESTE ID POR EL TUYO >>>
+local iconId = "16484419515"
+
+local iconUrl = "rbxassetid://" .. tostring(iconId)
+
+-- Precargar la imagen para evitar que no aparezca
+local ContentProvider = game:GetService("ContentProvider")
+local ok, err = pcall(function()
+    ContentProvider:PreloadAsync({iconUrl})
+end)
+
+if ok then
+    Icon.Image = iconUrl
+    Icon.Visible = true
+else
+    warn("[Slider] Error al cargar icono:", err)
+    Icon.Image = "rbxassetid://3926305904" -- fallback
+    Icon.Visible = true
+end
+
 -- Función slider (ACTUALIZA EL LÍMITE)
 local sliderDragging = false
 local function updateSlider(input)
-    local relX = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X,0,1)
-    SliderFill.Size = UDim2.new(relX,0,1,0)
-    maxPerSecond = math.floor(100 + relX*49900)
-    LimitLabel.Text = "🚀 Humos por segundo: "..maxPerSecond
+    local relX = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
+
+    -- barra llena
+    SliderFill.Size = UDim2.new(relX, 0, 1, 0)
+
+    -- mover handle
+    Handle.Position = UDim2.new(relX, -9, 0.5, -9)
+
+    -- actualizar valor
+    maxPerSecond = math.floor(100 + relX * 49900)
+    LimitLabel.Text = "⚠️ Humos por segundo: " .. maxPerSecond
 end
 
 SliderBack.InputBegan:Connect(function(input)
